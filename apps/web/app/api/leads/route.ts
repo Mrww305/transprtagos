@@ -1,47 +1,144 @@
-import { NextResponse } from 'next/server'
-import { z } from 'zod'
+/**
+ * API Route: Leads Management (CRM/Sales)
+ * Serverless runtime for database operations
+ * Handles lead creation, updates, and pipeline management
+ */
 
-const leadSchema = z.object({
-  company: z.string().min(1),
-  contact: z.string().min(1),
-  phone: z.string().optional(),
-  email: z.string().email().optional(),
-  value: z.string().optional(),
-})
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function GET() {
-  // Mock leads - in production fetch from database
-  const leads = [
-    { id: 1, company: 'Faisalabad Fabrics', contact: 'Nasir Mahmood', stage: 'new', value: '₨ 500,000' },
-    { id: 2, company: 'Sialkot Sports', contact: 'Tariq Jameel', stage: 'contacted', value: '₨ 750,000' },
-  ]
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
-  return NextResponse.json({ success: true, data: leads })
+interface Lead {
+  id: string;
+  companyName: string;
+  contactName: string;
+  phone: string;
+  email?: string;
+  status: 'new' | 'contacted' | 'qualified' | 'proposal' | 'negotiation' | 'won' | 'lost';
+  value: number; // in PKR
+  source: 'website' | 'referral' | 'cold-call' | 'social' | 'walk-in';
+  notes?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export async function POST(request: Request) {
-  try {
-    const body = await request.json()
-    const validated = leadSchema.parse(body)
+// Mock leads data - will be replaced with database
+const MOCK_LEADS: Lead[] = [
+  {
+    id: 'lead-001',
+    companyName: 'Al-Rehman Textiles',
+    contactName: 'Muhammad Ahmed',
+    phone: '+92-300-1234567',
+    email: 'ahmed@alrehmantextiles.pk',
+    status: 'qualified',
+    value: 500000,
+    source: 'referral',
+    notes: 'Regular Lahore-Karachi route, 10 trucks needed',
+    createdAt: new Date(Date.now() - 86400000 * 5).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: 'lead-002',
+    companyName: 'Peshawar Trading Co',
+    contactName: 'Khan Wali',
+    phone: '+92-311-9876543',
+    status: 'new',
+    value: 300000,
+    source: 'cold-call',
+    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
 
-    // In production: save to database via Drizzle ORM
-    console.log('Creating lead:', validated)
+/**
+ * GET /api/leads
+ * Returns all leads with optional filtering
+ * Query params: status?, source?, limit?
+ */
+export async function GET(request: NextRequest) {
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const status = searchParams.get('status');
+    const source = searchParams.get('source');
+    const limit = searchParams.get('limit') || '50';
+
+    let filteredLeads = [...MOCK_LEADS];
+
+    if (status) {
+      filteredLeads = filteredLeads.filter(lead => lead.status === status);
+    }
+
+    if (source) {
+      filteredLeads = filteredLeads.filter(lead => lead.source === source);
+    }
 
     return NextResponse.json({
       success: true,
-      data: { id: Date.now(), ...validated, stage: 'new' },
-      message: 'Lead created successfully',
-    })
+      leads: filteredLeads.slice(0, parseInt(limit)),
+      total: filteredLeads.length,
+      timestamp: new Date().toISOString(),
+    });
   } catch (error) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { success: false, error: 'Validation failed', details: error.errors },
-        { status: 400 }
-      )
-    }
+    console.error('[API Leads GET] Error:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to create lead' },
+      { error: 'Failed to fetch leads' },
       { status: 500 }
-    )
+    );
+  }
+}
+
+/**
+ * POST /api/leads
+ * Create a new lead
+ * Body: { companyName, contactName, phone, email?, value, source, notes? }
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { companyName, contactName, phone, email, value, source, notes } = body;
+
+    // Validation
+    if (!companyName || !contactName || !phone || !value || !source) {
+      return NextResponse.json(
+        { 
+          error: 'Missing required fields',
+          required: ['companyName', 'contactName', 'phone', 'value', 'source']
+        },
+        { status: 400 }
+      );
+    }
+
+    // In production: validate with Zod, save to database
+    const newLead: Lead = {
+      id: `lead-${Date.now()}`,
+      companyName,
+      contactName,
+      phone,
+      email,
+      status: 'new',
+      value: parseInt(value),
+      source,
+      notes,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    console.log('[New Lead Created]', newLead);
+
+    return NextResponse.json(
+      {
+        success: true,
+        lead: newLead,
+        message: 'Lead created successfully',
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('[API Leads POST] Error:', error);
+    return NextResponse.json(
+      { error: 'Failed to create lead' },
+      { status: 500 }
+    );
   }
 }
