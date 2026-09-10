@@ -18,7 +18,7 @@ export default function HomePage() {
         <div className="mx-auto max-w-2xl py-32 sm:py-48 lg:py-56">
           <div className="hidden sm:mb-8 sm:flex sm:justify-center">
             <div className="relative rounded-full px-3 py-1 text-sm leading-6 text-gray-600 ring-1 ring-gray-900/10 hover:ring-gray-900/20">
-              Built for Pakistan's logistics industry{' '}
+              Built for Pakistan&apos;s logistics industry{' '}
               <Link href="/fleet" className="font-semibold text-primary">
                 <span className="absolute inset-0" aria-hidden="true" />
                 Read more <ArrowRight className="inline h-4 w-4" />
@@ -30,7 +30,7 @@ export default function HomePage() {
               PakTransit OS
             </h1>
             <p className="mt-6 text-lg leading-8 text-gray-600">
-              Autonomous Transport Agent Operating System for Pakistan's logistics industry.
+              Autonomous Transport Agent Operating System for Pakistan&apos;s logistics industry.
               Featuring 6 AI agents, real-time tracking, and Urdu voice support for drivers.
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6">
