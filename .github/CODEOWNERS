@@ -1,0 +1,31 @@
+# GitHub CODEOWNERS for PakTransit OS
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owners for the entire repository
+* @founder
+
+# Web application ownership
+/apps/web/ @founder @frontend-lead
+
+# Edge functions ownership
+/apps/edge/ @founder @backend-lead
+
+# Shared packages ownership
+/packages/shared/ @founder @frontend-lead
+
+# Agents core logic ownership
+/packages/agents-core/ @founder @ai-lead
+
+# Infrastructure and DevOps
+/infra/ @founder @backend-lead
+/.github/ @founder
+
+# Documentation
+/docs/ @founder
+
+# Configuration files
+/package.json @founder
+/pnpm-workspace.yaml @founder
+/turbo.json @founder
+/vercel.json @founder
+/next.config.js @founder @frontend-lead

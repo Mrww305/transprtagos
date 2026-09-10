@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Get version from tag
+        id: get_version
+        run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Generate changelog
+        id: changelog
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: commits } = await github.rest.repos.listCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: 'main',
+              per_page: 100
+            });
+
+            const tagSha = '${{ github.ref }}';
+            let changelog = '## Changes\n\n';
+            
+            for (const commit of commits) {
+              if (commit.sha.startsWith(tagSha)) break;
+              
+              const message = commit.commit.message;
+              const prMatch = message.match(/\(#(\d+)\)/);
+              const prNumber = prMatch ? `[#${prMatch[1]}](https://github.com/${context.repo.owner}/${context.repo.repo}/pull/${prMatch[1]})` : '';
+              
+              if (message.startsWith('feat:')) {
+                changelog += `🚀 Features: ${message.replace('feat:', '').trim()} ${prNumber}\n`;
+              } else if (message.startsWith('fix:')) {
+                changelog += `🐛 Bug Fixes: ${message.replace('fix:', '').trim()} ${prNumber}\n`;
+              } else if (message.startsWith('docs:')) {
+                changelog += `📚 Documentation: ${message.replace('docs:', '').trim()} ${prNumber}\n`;
+              }
+            }
+
+            return changelog;
+          result-encoding: string
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: PakTransit OS v${{ steps.get_version.outputs.VERSION }}
+          body: |
+            ${{ steps.changelog.outputs.result }}
+            
+            ## Installation
+            
+            ```bash
+            git clone https://github.com/${{ github.repository }}.git
+            cd paktransit-os
+            pnpm install
+            pnpm dev
+            ```
+            
+            ## Deployment
+            
+            This release is ready to deploy to Vercel.
+            
+            ```bash
+            vercel --prod
+            ```
+          draft: false
+          prerelease: false
+          generate_release_notes: true
