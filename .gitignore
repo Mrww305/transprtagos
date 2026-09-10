@@ -1,5 +1,33 @@
+```
+# Dependencies
 node_modules/
-.next/
+.pnpm-store/
+
+# Build outputs
 dist/
 build/
+.next/
+out/
+
+# Environment variables
+.env.local
+.env.production
+.env.development
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
 *.log
+
+# Coverage
+coverage/
+.nyc_output/
+```
